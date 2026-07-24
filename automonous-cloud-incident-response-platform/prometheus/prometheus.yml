@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: chaos-target
+    static_configs:
+      - targets: ["chaos-target:8080"]
+        labels:
+          service: payments-api
+          cluster: demo-cluster
+
+  - job_name: backend
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: incident-platform
+          cluster: demo-cluster

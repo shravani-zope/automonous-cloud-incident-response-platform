@@ -1,0 +1,38 @@
+# Lightweight stack — no Kafka/Prometheus/Grafana/Postgres pulls required.
+services:
+  chaos-target:
+    build: ./demo/chaos-target
+    ports:
+      - "8081:8080"
+    environment:
+      SERVICE_NAME: payments-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///./acirp.db
+      KAFKA_ENABLED: "false"
+      PROMETHEUS_URL: http://chaos-target:8080
+      CHAOS_TARGET_URL: http://chaos-target:8080
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      AUTO_REMEDIATE: ${AUTO_REMEDIATE:-true}
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    depends_on:
+      chaos-target:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
